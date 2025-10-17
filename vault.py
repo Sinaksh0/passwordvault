@@ -181,7 +181,7 @@ class Vault_pass():
                 print("Okay!")
             return
         else:
-            print(emoji.emojize('There is not any file on your system :cross_mark:'))
+            print(emoji.emojize('There is no file on your system :cross_mark:'))
             
     def os_remove_file(self):
         if os.path.exists(self.filename):
@@ -197,7 +197,8 @@ class Vault_pass():
             
 vault = Vault_pass()
 def turn():
-    while True:
+    me = True
+    while me:
         print(emoji.emojize(':locked_with_key: Vault Menu: '))
         print(emoji.emojize('1. :plus: Add your password'))
         print(emoji.emojize('2. :wastebasket: Remove your password'))
@@ -219,25 +220,81 @@ def turn():
             Name = input("Enter a name of your password (Like: instagram): ")
             password = input('Enter your password: ')
             vault.add_pass(Name, password)
+            QN = input('Do you want to continue (y,n)? ')
+            if QN.upper() == 'Y':
+                me = True
+            else:
+                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
+                me = False
+                break
         elif choose == 2:
             Name = input('Enter a name to remove it: ')
             password = input('Enter your password to remove it: ')
             vault.remove(Name,password)
+            QN = input('Do you want to continue (y,n)? ')
+            if QN.upper() == 'Y':
+                me = True
+            else:
+                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
+                me = False
+                break
         elif choose == 3:
             Name = input('Enter a name of your password to search it: ')
             vault.search_pass(Name)
+            QN = input('Do you want to continue (y,n)? ')
+            if QN.upper() == 'Y':
+                me = True
+            else:
+                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
+                me = False
+                break
         elif choose == 4:
             vault.show()
+            QN = input('Do you want to continue (y,n)? ')
+            if QN.upper() == 'Y':
+                me = True
+            else:
+                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
+                me = False
+                break
         elif choose == 5:
             name = input('Enter the name of the password to edit: ')
-            old = input('Enter the current password: ')
+            old = input('Enter the old password: ')
             vault.edit_pass(name, old)
+            QN = input('Do you want to continue (y,n)? ')
+            if QN.upper() == 'Y':
+                me = True
+            else:
+                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
+                me = False
+                break
         elif choose == 6:
             vault.recover_password()
+            QN = input('Do you want to continue (y,n)? ')
+            if QN.upper() == 'Y':
+                me = True
+            else:
+                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
+                me = False
+                break
         elif choose == 7:
             vault.os_remove_file()
+            QN = input('Do you want to continue (y,n)? ')
+            if QN.upper() == 'Y':
+                me = True
+            else:
+                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
+                me = False
+                break
         elif choose == 8:
             vault.os_remove_lock()
+            QN = input('Do you want to continue (y,n)? ')
+            if QN.upper() == 'Y':
+                me = True
+            else:
+                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
+                me = False
+                break
         elif choose == 9:
             print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
             break
