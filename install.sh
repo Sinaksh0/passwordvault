@@ -43,4 +43,4 @@ python "$VAULT_DIR/vault.py" || {
     exit 1
 }
 
-echo -e "\e[32m🎉 Vault setup complete. All data stays inside Termux.\e[0m"
+echo -e "\e[32m🎉 Vault setup complete.\e[0m"
