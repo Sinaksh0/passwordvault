@@ -165,9 +165,9 @@ class Vault_pass():
                 sort = sorted(self.vault, key=lambda x: x['Saved_at'])
             else:
                 sort = self.vault
-            
+            print('Lock at your all password!')
             for pas in sort:
-                print(emoji.emojize(f':locked_with_key: Your name of password is: {pas["Name of the web"]} and your password is: {pas["Password"]} and saved at: {pas["Saved_at"]}'))
+                print(emoji.emojize(f':locked_with_key: {pas["Name of the web"]}: {pas["Password"]}'))
         else:
             print(emoji.emojize('Now, There is no password here :cross_mark:'))
     
