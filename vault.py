@@ -1,3 +1,4 @@
+
 import json
 import os
 import emoji
@@ -18,7 +19,7 @@ class Vault_pass():
             print("What is your first school (THIS IS FOE RECOVER YOUR PASSWORD FOR UNLOCK THE FILE)?")
             answer = input('Enter your answer for security question: ').strip()
             hashed_answer = self.hash_pass(answer)
-            master = input(f'Enter a main password to lock your file {self.filename}: ')
+            master = input('Enter a main password to lock your file: ')
             hashed = self.hash_pass(master)
             with open(self.lock , 'w') as file:
                 json.dump({
@@ -33,7 +34,7 @@ class Vault_pass():
         with open(self.lock, 'r') as file:
             saved = json.load(file)
         try:
-            print('You have THREE chance to guess the password')
+            print('You have THREE chance to enter the password')
             game = False
             for _ in range(3):
                 attempt = input('Enter a main password to unlock your file: ')
@@ -68,6 +69,7 @@ class Vault_pass():
                 with open(self.lock, 'w') as file:
                     json.dump(data, file, indent=4)
                 print(emoji.emojize('The new password was changed successfully :check_mark_button:'))
+                self.check_master_password()
                 play = True
                 return
             else:
@@ -173,15 +175,11 @@ class Vault_pass():
     
     def os_remove_lock(self):
         if os.path.exists(self.lock):
-            confirm = input("Are you sure you want to delete your security question and password for lock the file? (y,n): ")
-            if confirm.upper() == 'Y':
-                os.remove(self.lock)
-                print(emoji.emojize('The file was deleted! :check_mark_button:'))
-            else:
-                print("Okay!")
+            os.remove(self.lock)
             return
         else:
             print(emoji.emojize('There is no file on your system :cross_mark:'))
+            return None
             
     def os_remove_file(self):
         if os.path.exists(self.filename):
@@ -194,6 +192,7 @@ class Vault_pass():
             return
         else:
             print(emoji.emojize('There is not any file on your system :cross_mark:'))
+            return None
             
 vault = Vault_pass()
 def turn():
@@ -206,9 +205,8 @@ def turn():
         print(emoji.emojize('4. :clipboard: Show all your password'))
         print(emoji.emojize('5. :pencil: Edit your password'))
         print(emoji.emojize('6. :locked_with_key: Change your password for lock the file'))
-        print(emoji.emojize('7. :bomb: Delete all my password'))
-        print(emoji.emojize('8. :firecracker: Delete my password and question for lock the file'))
-        print(emoji.emojize('9. :cross_mark: Exit'))
+        print(emoji.emojize('7. :bomb: Reset Factory'))
+        print(emoji.emojize('8. :cross_mark: Exit'))
     
         try:
             choose = int(input('Enter a number from the List: '))
@@ -279,23 +277,10 @@ def turn():
                 break
         elif choose == 7:
             vault.os_remove_file()
-            QN = input('Do you want to continue (y,n)? ')
-            if QN.upper() == 'Y':
-                me = True
-            else:
-                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
-                me = False
-                break
-        elif choose == 8:
             vault.os_remove_lock()
-            QN = input('Do you want to continue (y,n)? ')
-            if QN.upper() == 'Y':
-                me = True
-            else:
-                print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
-                me = False
-                break
-        elif choose == 9:
+            me = False
+            break
+        elif choose == 8:
             print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
             break
         else:
