@@ -24,6 +24,15 @@ else
     echo -e "\e[32m✅ emoji already installed.\e[0m"
 fi
 
+if ! pip show colorama > /dev/null 2>&1; then
+    echo -e "\e[33m📦 Installing colorama library...\e[0m"
+    pip install colorama || {
+        echo -e "\e[31m❌ Failed to install colorama. Exiting.\e[0m"
+        exit 1
+    }
+else
+    echo -e "\e[32m✅ colorama already installed.\e[0m"
+fi
 # مرحله 3: ساخت دایرکتوری مخفی برای فایل‌ها
 VAULT_DIR="$HOME/.vault"
 mkdir -p "$VAULT_DIR"
