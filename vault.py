@@ -10,7 +10,7 @@ from datetime import datetime
 from colorama import Fore, Style
 
 class Vault_Pass():
-    def __init__(self, filename = 'My_Pass.json', lock = 'lock.json'):
+    def __init__(self, filename = 'My_pass.json', lock = 'lock'):
         self.lock = lock
         self.filename = filename
         self.vault = self.load_data()
