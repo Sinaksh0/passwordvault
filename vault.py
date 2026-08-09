@@ -10,11 +10,11 @@ from datetime import datetime
 from colorama import Fore, Style
 
 class Vault_Pass():
-    def __init__(self, filename = 'My_pass.json', lock = 'lock'):
+    def __init__(self, filename = 'My_Pass.json', lock = 'lock.json'):
         self.lock = lock
         self.filename = filename
         self.vault = self.load_data()
-    
+
     def hash_pass(self, password):
         return hashlib.sha256(password.encode()).hexdigest()
     
@@ -177,6 +177,10 @@ class Vault_Pass():
     def add_pass(self, Name, password):
         Name = Name.strip()
         password = password.strip()
+        if any(pas['Name of the web'] == Name or pas['Password'] == password for pas in self.vault):
+            print(emoji.emojize(Fore.RED + f'The name {Name} or password {password} is already exists :cross_mark:' + Style.RESET_ALL))
+            return
+        
         self.vault.append({
             'Name of the web': Name,
             'Password': password,
@@ -209,7 +213,7 @@ class Vault_Pass():
                 break
         if not found:
             print(emoji.emojize(Fore.RED + 'Not found :cross_mark:' + Style.RESET_ALL))
-            
+
     def edit_pass(self, Name, old_password):
         Name = Name.strip()
         old = old_password.strip()
@@ -233,10 +237,14 @@ class Vault_Pass():
             print('Choose sorting method:')
             print('1. Sort by name')
             print('2. Sort by date')
-            try:
-                choice = int(input('Enter 1 or 2: '))
-            except ValueError:
-                choice = int(input('Just enter 1 or 2: '))
+
+            while True:
+                try:
+                    choice = int(input('Enter 1 or 2: '))
+                    break
+                except ValueError:
+                    print('Just enter a number!')
+
             if choice == 1:
                 sort = sorted(self.vault, key=lambda x: x['Name of the web'].lower())
             elif choice == 2:
@@ -245,7 +253,7 @@ class Vault_Pass():
                 sort = self.vault
             print('Lock at your all password!')
             for pas in sort:
-                print(emoji.emojize(f':locked_with_key: {pas["Name of the web"]}: {pas["Password"]}'))
+                print(emoji.emojize(f':locked_with_key: {pas["Name of the web"]}: {pas["Password"]} at {pas["Saved_at"]}'))
         else:
             print(emoji.emojize(Fore.RED + 'Now, There is no password here :cross_mark:' + Style.RESET_ALL))
     
@@ -282,8 +290,26 @@ class Vault_Pass():
         else:
             print(emoji.emojize(Fore.RED + "There is not passwords to remove them yet! :cross_mark:" + Style.RESET_ALL))
 
-    def generate_password(self, length=8):
-        characters = string.ascii_letters + string.digits + string.punctuation
+    def generate_password(self, letter: bool = True, digit: bool = True, punctuation: bool = True, length=8):
+        if letter and digit and punctuation:
+            characters = string.ascii_letters + string.digits + string.punctuation
+        elif letter and digit:
+            characters = string.ascii_letters + string.digits
+        elif letter and punctuation:
+            characters = string.ascii_letters + string.punctuation
+        elif digit and punctuation:
+            characters = string.digits + string.punctuation
+        else:
+            if letter:   
+                characters = string.ascii_letters
+            elif digit:
+                characters = string.digits
+            elif punctuation:
+                characters = string.punctuation
+            else:
+                print((Fore.RED + 'At least, You have to select an option!' + Style.RESET_ALL))
+                return
+
         password = []
         if length < 4:
             length = 4
@@ -292,7 +318,7 @@ class Vault_Pass():
         
         random.shuffle(password)
         result = "".join(password)
-        print(f'The Generation Password is: {result}')
+        print('The Generation Password is:' + Fore.LIGHTGREEN_EX + f' {result}' + Style.RESET_ALL)
         Q = input('Do you want to save it (y,n)? ')
         if Q.upper() == 'Y':
             Name = input('Enter a name for it: ')
@@ -303,27 +329,20 @@ class Vault_Pass():
             })
             self.save_data()
             print(emoji.emojize(Fore.GREEN + 'The Generation Password was saved successfully :check_mark:' + Style.RESET_ALL))
-    
-    def os_remove_lock(self):
-        if os.path.exists(self.lock):
-            os.remove(self.lock)
-            return
-        else:
-            print(emoji.emojize(Fore.RED + 'There is no file on your system :cross_mark:' + Style.RESET_ALL))
-            return 
             
     def os_remove_file(self):
-        if os.path.exists(self.filename):
-            confirm = input("Are you sure you want to delete your security question and password for lock the file? (y,n): ")
-            if confirm.upper() == 'Y':
-                os.remove(self.filename)
-                print(emoji.emojize(Fore.GREEN + 'The file was deleted! :check_mark_button:' + Style.RESET_ALL))
-            else:
-                print("Okay!")
-            return
-        else:
+        if not os.path.exists(self.filename) and not os.path.exists(self.lock):
             print(emoji.emojize(Fore.RED + 'There is not any file on your system :cross_mark:' + Style.RESET_ALL))
             return
+        
+        confirm = input("Are you sure you want to delete your all password and lock file? (y,n): ")
+        if confirm.upper() == 'Y':
+            if os.path.exists(self.filename):
+                os.remove(self.filename)
+            if os.path.exists(self.lock):
+                os.remove(self.lock)
+            print(emoji.emojize(Fore.GREEN + 'The files were deleted! :check_mark_button:' + Style.RESET_ALL))
+
     
     def continue_program(self):
         Q = input('Do you want to continue Password Manager (y,n)? ')
@@ -332,12 +351,14 @@ class Vault_Pass():
         else:
             print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
             return False
+
             
-vault = Vault_Pass()
 def turn():
+    vault = Vault_Pass()
     play = True
+    
     while play:
-        print(emoji.emojize('---Password Manager---'))
+        print(emoji.emojize('\n---Password Manager---'))
         print(emoji.emojize('1. Add Your Password :plus:'))
         print(emoji.emojize('2. Remove Your Password :wastebasket:'))
         print(emoji.emojize('3. Search Your Password :magnifying_glass_tilted_left:'))
@@ -406,20 +427,43 @@ def turn():
             play = vault.continue_program()
 
         elif choose == 9:
-            while True:
+            acci = input('Do you want the alphabet for generation password (y,n)? ')
+            if acci.lower() == 'y':
+                letter = True
+            else:
+                letter = False
+
+            number = input('Do you want numbers for generation password (y,n)? ')
+            if number.lower() == 'y':
+                digit = True
+            else:
+                digit = False
+
+            pun = input('Do you want the punctuation mark for generation password (y,n)? ')
+            if pun.lower() == 'y':
+                punctuation = True
+            else:
+                punctuation = False
+
+            play = True
+            while play:
                 try: 
-                    length = int(input('Enter a length of the password (DEFAULT IS 8): '))
+                    length = input('Enter a length of the password (DEFAULT IS 8): ')
+                    if length == '':
+                        vault.generate_password(letter, digit, punctuation)
+                        play = False
+                        break
+                    length = int(length)
                     break
                 except ValueError:
                     print("Just enter a number")
-
-            vault.generate_password(length)
+            if play:
+                vault.generate_password(letter, digit, punctuation, length)
             play = vault.continue_program()
 
         elif choose == 10:
             vault.os_remove_file()
-            vault.os_remove_lock()
-            play = vault.continue_program()
+            break
 
         elif choose == 11:
             print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
