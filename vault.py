@@ -102,33 +102,38 @@ class Vault_Pass():
         score = 0
         result = []
 
-        if len(password) >= 8:
+        if len(password) >= 12:
+            score += 1
+        elif len(password) >= 8:
             score += 1
         else:
-            result.append('The password length is less than eight character!')
-        
+            result.append('Password length must be at least 8 characters.')
+
         if re.search(r"[a-z]", password):
             score += 1
         else:
-            result.append('There is not any small words (a-z) in the password!')
-        
+            result.append('Add at least one lowercase letter.')
+
         if re.search(r"[A-Z]", password):
             score += 1
         else:
-            result.append('There is not any captal words (A-Z) in the password!')
-        
+            result.append('Add at least one uppercase letter.')
+
         if re.search(r"\d", password):
             score += 1
         else:
-            result.append('There is not digit in the password!')
-        
+            result.append('Add at least one number.')
+
         if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
             score += 1
         else:
-            result.append('There is not punctuation mark in the password!')
-        
+            result.append('Add at least one special character.')
+
         if score == 5:
-            level = 'Great!'
+            level = 'Very Strong!'
+            status = False
+        elif score >= 4:
+            level = 'Strong!'
             status = False
         elif score >= 3:
             level = 'Good!'
@@ -136,14 +141,14 @@ class Vault_Pass():
         else:
             level = 'Weak!'
             status = True
-        
+
         return level, result, status
     
     def check_pass_to_add(func):
         def wrapper(self, Name, Password):
             level, result, status = self.check_pass_strength(Password)
             while status:
-                print(f'Your level password: {level}')
+                print(Fore.YELLOW + f'Password level: {level}' + Style.RESET_ALL)
                 if result:
                     for res in result:
                         print(f'- {res}')
@@ -232,30 +237,32 @@ class Vault_Pass():
             print(emoji.emojize(Fore.RED + 'Password not found :cross_mark:' + Style.RESET_ALL))
         
     def show(self):
-        if self.vault:
-            print(emoji.emojize(f":clipboard: You have {len(self.vault)} passwords"))
-            print('Choose sorting method:')
-            print('1. Sort by name')
-            print('2. Sort by date')
+        if not self.vault:
+            print(emoji.emojize(Fore.RED + 'There are no passwords saved yet :cross_mark:' + Style.RESET_ALL))
+            return
 
-            while True:
-                try:
-                    choice = int(input('Enter 1 or 2: '))
-                    break
-                except ValueError:
-                    print('Just enter a number!')
+        print(emoji.emojize(f":clipboard: You have {len(self.vault)} saved passwords."))
+        print('Choose sorting method:')
+        print('1. Sort by name')
+        print('2. Sort by date')
 
-            if choice == 1:
-                sort = sorted(self.vault, key=lambda x: x['Name of the web'].lower())
-            elif choice == 2:
-                sort = sorted(self.vault, key=lambda x: x['Saved_at'])
-            else:
-                sort = self.vault
-            print('Lock at your all password!')
-            for pas in sort:
-                print(emoji.emojize(f':locked_with_key: {pas["Name of the web"]}: {pas["Password"]} at {pas["Saved_at"]}'))
+        while True:
+            try:
+                choice = int(input('Enter 1 or 2: '))
+                break
+            except ValueError:
+                print('Just enter a number!')
+
+        if choice == 1:
+            sort = sorted(self.vault, key=lambda x: x['Name of the web'].lower())
+        elif choice == 2:
+            sort = sorted(self.vault, key=lambda x: x['Saved_at'])
         else:
-            print(emoji.emojize(Fore.RED + 'Now, There is no password here :cross_mark:' + Style.RESET_ALL))
+            sort = self.vault
+
+        print('Lock at your all password!')
+        for pas in sort:
+            print(emoji.emojize(f':locked_with_key: {pas["Name of the web"]}: {pas["Password"]} at {pas["Saved_at"]}'))
     
     def remove_weak_password(self):
         if self.vault:
@@ -291,6 +298,10 @@ class Vault_Pass():
             print(emoji.emojize(Fore.RED + "There is not passwords to remove them yet! :cross_mark:" + Style.RESET_ALL))
 
     def generate_password(self, letter: bool = True, digit: bool = True, punctuation: bool = True, length=8):
+        if not any([letter, digit, punctuation]):
+            print((Fore.RED + 'You must select at least one character type!' + Style.RESET_ALL))
+            return
+
         if letter and digit and punctuation:
             characters = string.ascii_letters + string.digits + string.punctuation
         elif letter and digit:
@@ -299,26 +310,23 @@ class Vault_Pass():
             characters = string.ascii_letters + string.punctuation
         elif digit and punctuation:
             characters = string.digits + string.punctuation
+        elif letter:
+            characters = string.ascii_letters
+        elif digit:
+            characters = string.digits
         else:
-            if letter:   
-                characters = string.ascii_letters
-            elif digit:
-                characters = string.digits
-            elif punctuation:
-                characters = string.punctuation
-            else:
-                print((Fore.RED + 'At least, You have to select an option!' + Style.RESET_ALL))
-                return
+            characters = string.punctuation
 
-        password = []
         if length < 4:
             length = 4
+
+        password = []
         for _ in range(length):
             password.append(random.choice(characters))
-        
+
         random.shuffle(password)
         result = "".join(password)
-        print('The Generation Password is:' + Fore.LIGHTGREEN_EX + f' {result}' + Style.RESET_ALL)
+        print('Generated Password:' + Fore.LIGHTGREEN_EX + f' {result}' + Style.RESET_ALL)
         Q = input('Do you want to save it (y,n)? ')
         if Q.upper() == 'Y':
             Name = input('Enter a name for it: ')
@@ -328,7 +336,7 @@ class Vault_Pass():
                 'Saved_at': datetime.now().isoformat()
             })
             self.save_data()
-            print(emoji.emojize(Fore.GREEN + 'The Generation Password was saved successfully :check_mark:' + Style.RESET_ALL))
+            print(emoji.emojize(Fore.GREEN + 'The generated password was saved successfully :check_mark:' + Style.RESET_ALL))
             
     def os_remove_file(self):
         if not os.path.exists(self.filename) and not os.path.exists(self.lock):
@@ -358,17 +366,17 @@ def turn():
     play = True
     
     while play:
-        print(emoji.emojize('\n---Password Manager---'))
-        print(emoji.emojize('1. Add Your Password :plus:'))
-        print(emoji.emojize('2. Remove Your Password :wastebasket:'))
-        print(emoji.emojize('3. Search Your Password :magnifying_glass_tilted_left:'))
-        print(emoji.emojize('4. Show All Your Password :clipboard:'))
-        print(emoji.emojize('5. Edit Your Password :pencil:'))
-        print(emoji.emojize('6. Change Your Password For Lock The File :locked_with_key:'))
-        print(emoji.emojize('7. Check Your All Password Level :bar_chart:'))
-        print(emoji.emojize('8. Delete All Weak Password And Replace It :shield:'))
-        print(emoji.emojize('9. Generate Passsword :game_die:'))
-        print(emoji.emojize('10. Reset Factory :bomb:'))
+        print(emoji.emojize('\n--- Password Manager ---'))
+        print(emoji.emojize('1. Add a password :plus:'))
+        print(emoji.emojize('2. Remove a password :wastebasket:'))
+        print(emoji.emojize('3. Search a password :magnifying_glass_tilted_left:'))
+        print(emoji.emojize('4. Show all passwords :clipboard:'))
+        print(emoji.emojize('5. Edit a password :pencil:'))
+        print(emoji.emojize('6. Change your master password :locked_with_key:'))
+        print(emoji.emojize('7. Check password strength :bar_chart:'))
+        print(emoji.emojize('8. Replace weak passwords :shield:'))
+        print(emoji.emojize('9. Generate a password :game_die:'))
+        print(emoji.emojize('10. Reset all data :bomb:'))
         print(emoji.emojize('11. Exit :cross_mark:'))
 
         while True:
@@ -379,10 +387,14 @@ def turn():
                 print('Just enter a number')
         
         if choose == 1:
-            Name = input("Enter a name of your password (Like: instagram): ")
-            password = input('Enter your password: ')
-            vault.add_pass(Name, password)
-            play = vault.continue_program()
+            Name = input('Enter a name for this password (for example: instagram): ').strip()
+            password = input('Enter your password: ').strip()
+            if not Name or not password:
+                print(Fore.RED + 'Name and password cannot be empty.' + Style.RESET_ALL)
+                play = vault.continue_program()
+            else:
+                vault.add_pass(Name, password)
+                play = vault.continue_program()
 
         elif choose == 2:
             if vault.vault:
@@ -456,7 +468,8 @@ def turn():
                     length = int(length)
                     break
                 except ValueError:
-                    print("Just enter a number")
+                    print(Fore.YELLOW + 'Please enter a valid number.' + Style.RESET_ALL)
+
             if play:
                 vault.generate_password(letter, digit, punctuation, length)
             play = vault.continue_program()
