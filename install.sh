@@ -33,6 +33,17 @@ if ! pip show colorama > /dev/null 2>&1; then
 else
     echo -e "\e[32m✅ colorama already installed.\e[0m"
 fi
+
+if ! pip show pyperclip > /dev/null 2>&1; then
+    echo -e "\e[33m📦 Installing colorama library...\e[0m"
+    pip install pyperclip || {
+        echo -e "\e[31m❌ Failed to install pyperclip. Exiting.\e[0m"
+        exit 1
+    }
+else
+    echo -e "\e[32m✅ pyperclip already installed.\e[0m"
+fi
+
 # مرحله 3: ساخت دایرکتوری مخفی برای فایل‌ها
 VAULT_DIR="$HOME/.vault"
 mkdir -p "$VAULT_DIR"
