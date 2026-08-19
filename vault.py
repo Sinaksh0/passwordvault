@@ -330,18 +330,26 @@ class Vault_Pass():
                     if question == 1:
                         index = int(input('Enter the number to copy name: '))
                         if 1 <= index <= len(sort):
-                            pyperclip.copy(sort[index - 1]['Name'])
-                            print(emoji.emojize(Fore.GREEN + f"Name '{sort[index - 1]['Name']}' copied to clipboard :clipboard:" + Style.RESET_ALL))
-                            break
+                            try:
+                                pyperclip.copy(sort[index - 1]['Name'])
+                                print(emoji.emojize(Fore.GREEN + f"Name '{sort[index - 1]['Name']}' copied to clipboard :clipboard:" + Style.RESET_ALL))
+                                break
+                            except pyperclip.PyperclipException:
+                                print(Fore.RED + 'Failed to copy to clipboard. Please ensure you have a clipboard available.' + Style.RESET_ALL)
+                                break
                         else:
                             print(Fore.YELLOW + 'Invalid number. Please enter a valid number in the range.' + Style.RESET_ALL)
 
                     elif question == 2:
                         index = int(input('Enter the number to copy password: '))
                         if 1 <= index <= len(sort):
-                            pyperclip.copy(sort[index - 1]['Password'])
-                            print(emoji.emojize(Fore.GREEN + f"Password '{sort[index - 1]['Password']}' copied to clipboard :clipboard:" + Style.RESET_ALL))
-                            break
+                            try:
+                                pyperclip.copy(sort[index - 1]['Password'])
+                                print(emoji.emojize(Fore.GREEN + f"Password '{sort[index - 1]['Password']}' copied to clipboard :clipboard:" + Style.RESET_ALL))
+                                break
+                            except pyperclip.PyperclipException:
+                                print(Fore.RED + 'Failed to copy to clipboard. Please ensure you have a clipboard available.' + Style.RESET_ALL)
+                                break
                         else:
                             print(Fore.YELLOW + 'Invalid number. Please enter a valid number in the range.' + Style.RESET_ALL)
 
