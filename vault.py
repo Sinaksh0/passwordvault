@@ -27,13 +27,15 @@ class Vault_Pass():
             with open(VERSION_FILE, 'r') as file:
                 old_version = file.read().strip()
 
-        if old_version != APP_VERSION:
+        if old_version == APP_VERSION:
+            print('Version:' + Fore.GREEN + f' v{APP_VERSION}' + Style.RESET_ALL)
+        else:
             if old_version:
                 print('Application updated:' + Fore.GREEN + f' v{old_version} -> v{APP_VERSION}' + Style.RESET_ALL)
+            else:
+                print('Version:' + Fore.GREEN + f' v{APP_VERSION}' + Style.RESET_ALL)
             with open(VERSION_FILE, 'w') as file:
                 file.write(APP_VERSION)
-        else:
-            print('Application version:' + Fore.GREEN + f' v{APP_VERSION}' + Style.RESET_ALL)
 
     def status_update(self):
         try:
