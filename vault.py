@@ -11,11 +11,29 @@ import pyperclip
 from datetime import datetime
 from colorama import Fore, Style
 
+APP_VERSION = '0.5.0'
+VERSION_FILE = 'version.txt'
+
 class Vault_Pass():
     def __init__(self, filename = 'My_Pass.json', lock = 'lock.json'):
         self.lock = lock
         self.filename = filename
+        self.show_version_update()
         self.vault = self.go_update()
+
+    def show_version_update(self):
+        old_version = None
+        if os.path.exists(VERSION_FILE):
+            with open(VERSION_FILE, 'r') as file:
+                old_version = file.read().strip()
+
+        if old_version != APP_VERSION:
+            if old_version:
+                print('Application updated:' + Fore.GREEN + f' v{old_version} -> v{APP_VERSION}' + Style.RESET_ALL)
+            with open(VERSION_FILE, 'w') as file:
+                file.write(APP_VERSION)
+        else:
+            print('Application version:' + Fore.GREEN + f' v{APP_VERSION}' + Style.RESET_ALL)
 
     def status_update(self):
         try:
@@ -47,7 +65,7 @@ class Vault_Pass():
             self.write_false_status()
             return self.load_data()
 
-        print(emoji.emojize(Fore.YELLOW + 'Your data is old, we will update it to the new version... :warning:' + Style.RESET_ALL))
+        print(emoji.emojize(Fore.YELLOW + f'Your data is old. Updating it for app v{APP_VERSION}... :warning:' + Style.RESET_ALL))
         update_data = []
         for old in data:
             update_data.append({
@@ -62,7 +80,7 @@ class Vault_Pass():
             json.dump(update_data, file, indent=4)
 
         self.write_false_status()
-        print(emoji.emojize(Fore.GREEN + 'Your data is updated successfully :check_mark_button:' + Style.RESET_ALL))
+        print(emoji.emojize(Fore.GREEN + f'Your data was migrated to app v{APP_VERSION} :check_mark_button:' + Style.RESET_ALL))
         return self.load_data()
 
     def hash_pass(self, password):
@@ -460,6 +478,8 @@ class Vault_Pass():
                 os.remove(self.lock)
             if os.path.exists('status.txt'):
                 os.remove('status.txt')
+            if os.path.exists(VERSION_FILE):
+                os.remove(VERSION_FILE)
             print(emoji.emojize(Fore.GREEN + 'The files were removed! :check_mark_button:' + Style.RESET_ALL))
 
     
@@ -472,12 +492,12 @@ class Vault_Pass():
             return False
 
             
-def turn():
-    vault = Vault_Pass()
+def password_manager(vault_class):
+    vault = vault_class()
     play = True
     
     while play:
-        print(emoji.emojize('\n--- Password Manager ---'))
+        print(emoji.emojize(f'\n--- Password Manager v{APP_VERSION} ---'))
         print(emoji.emojize('1. Add a password :plus:'))
         print(emoji.emojize('2. Remove a password :wastebasket:'))
         print(emoji.emojize('3. Search a password :magnifying_glass_tilted_left:'))
@@ -593,6 +613,9 @@ def turn():
             break
         else:
             print(emoji.emojize(Fore.RED + 'Invalid number :cross_mark:' + Style.RESET_ALL))
+
+def turn():
+    password_manager(Vault_Pass)
         
 if __name__ == '__main__':
     turn()
