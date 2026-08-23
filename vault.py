@@ -11,7 +11,7 @@ import pyperclip
 from datetime import datetime
 from colorama import Fore, Style
 
-APP_VERSION = '1.0.0'
+APP_VERSION = '1.0.5'
 VERSION_FILE = 'version.txt'
 
 class Vault_Pass():
@@ -115,11 +115,14 @@ class Vault_Pass():
             ans = input('What is your answer: ')
             if self.hash_pass(ans) == data['answer']:
                 new_pass = input('Enter a new password for lock the file: ')
+                if self.hash_pass(new_pass) == data['master']:
+                    print(emoji.emojize(Fore.YELLOW + 'The new password is already existed! :warning:' + Style.RESET_ALL))
+                    continue
                 data['master'] = self.hash_pass(new_pass)
                 with open(self.lock, 'w') as file:
                     json.dump(data, file, indent=4)
+
                 print(emoji.emojize(Fore.GREEN + 'The new password was changed successfully :check_mark_button:' + Style.RESET_ALL))
-                self.check_master_password()
                 play = True
                 return
             else:
@@ -137,14 +140,16 @@ class Vault_Pass():
             data = json.load(file)
 
         print('What is your current security question (First School)? ')
-
         game = True
         for _ in range(3):
             ans = input('Enter your answer: ')
             if self.hash_pass(ans) == data['answer']:
                 new = input('Enter a new answer for security question: ')
-                data['answer'] = self.hash_pass(new)
+                if self.hash_pass(new) == data['answer']:
+                    print(emoji.emojize(Fore.YELLOW + 'The new answer is already existed! :warning:' + Style.RESET_ALL))
+                    continue
 
+                data['answer'] = self.hash_pass(new)
                 with open(self.lock, 'w') as file:
                     json.dump(data, file, indent=4)
 
@@ -662,8 +667,6 @@ def report():
             print(emoji.emojize(Fore.RED + 'Invalid number :cross_mark:' + Style.RESET_ALL))
 
 def generation_password():
-    vault = Vault_Pass()
-
     acci = input('Do you want the alphabet for generation password (y,n)? ')
     if acci.lower() == 'y':
         letter = True
@@ -739,19 +742,29 @@ def setting():
             if not os.path.exists(vault.lock):
                 print(emoji.emojize(Fore.YELLOW + 'You do not have a master password yet :warning:' + Style.RESET_ALL))
                 continue
+            else:
+                vault.recover_password()
+                if vault.question is False:
+                    with open('question.txt', 'w', encoding='utf-8') as file:
+                        file.write('True')
+                    vault.question = True
 
-            vault.recover_password()
-            turn()
-            return
+                turn()
+                return
 
         elif choose == 3:
             if not os.path.exists(vault.lock):
                 print(emoji.emojize(Fore.YELLOW + 'You do not set any password for lock the file yet! :warning:' + Style.RESET_ALL))
                 continue
+            else:
+                vault.change_security_question()
+                if vault.question is False:
+                    with open('question.txt', 'w', encoding='utf-8') as file:
+                        file.write('True')
+                    vault.question = True
 
-            vault.change_security_question()
-            turn()
-            return
+                turn()
+                return
 
         elif choose == 4:
             vault.os_remove_file()
