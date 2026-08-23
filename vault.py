@@ -11,7 +11,7 @@ import pyperclip
 from datetime import datetime
 from colorama import Fore, Style
 
-APP_VERSION = '0.5.0'
+APP_VERSION = '1.0.0'
 VERSION_FILE = 'version.txt'
 
 class Vault_Pass():
@@ -19,7 +19,8 @@ class Vault_Pass():
         self.lock = lock
         self.filename = filename
         self.show_version_update()
-        self.vault = self.go_update()
+        self.question = self.load_question()
+        self.vault = self.load_data()
 
     def show_version_update(self):
         old_version = None
@@ -28,62 +29,36 @@ class Vault_Pass():
                 old_version = file.read().strip()
 
         if old_version == APP_VERSION:
-            print('Version:' + Fore.GREEN + f' v{APP_VERSION}' + Style.RESET_ALL)
+            print('\nVersion:' + Fore.GREEN + f' v{APP_VERSION}' + Style.RESET_ALL)
         else:
             if old_version:
-                print('Application updated:' + Fore.GREEN + f' v{old_version} -> v{APP_VERSION}' + Style.RESET_ALL)
+                print('\nUpdating Version...' + Fore.RED + f'\nv{old_version}' + Style.RESET_ALL + ' -> ' + Fore.GREEN + f'v{APP_VERSION}' + Style.RESET_ALL)
             else:
-                print('Version:' + Fore.GREEN + f' v{APP_VERSION}' + Style.RESET_ALL)
+                print('\nVersion:' + Fore.GREEN + f' v{APP_VERSION}' + Style.RESET_ALL)
             with open(VERSION_FILE, 'w') as file:
                 file.write(APP_VERSION)
 
-    def status_update(self):
-        try:
-            with open('status.txt', 'r') as file:
-                status = file.read()
-
-                if status == 'False':
-                    return False
-                else:
-                    return None
-        except FileNotFoundError:
-            return None
-
-    def write_false_status(self):
-        with open('status.txt', 'w') as file:
-            file.write('False')
-
-    def go_update(self):
-        if self.status_update() is False:
-            return self.load_data()
+    def load_data(self):   
+        if os.path.exists(self.filename):
+            with open(self.filename, 'r') as file:
+                return json.load(file)
+        else:
+            return []
         
-        if not os.path.exists(self.filename):
-            self.write_false_status()
-            return self.load_data()
-
-        with open(self.filename, 'r') as file:
-            data = json.load(file)
-        if not data:
-            self.write_false_status()
-            return self.load_data()
-
-        print(emoji.emojize(Fore.YELLOW + f'Your data is old. Updating it for app v{APP_VERSION}... :warning:' + Style.RESET_ALL))
-        update_data = []
-        for old in data:
-            update_data.append({
-                'id': str(uuid.uuid4()),
-                'Name': old.get('Name of the web', ''),
-                'Password': old.get('Password', ''),
-                'create_at': old.get('Saved_at', datetime.now().isoformat()),
-                'updated_at': old.get('Saved_at', datetime.now().isoformat())
-            })
-
+    def save_data(self):
         with open(self.filename, 'w') as file:
-            json.dump(update_data, file, indent=4)
+            return json.dump(self.vault, file, indent=4)
 
-        self.write_false_status()
-        print(emoji.emojize(Fore.GREEN + f'Your data was migrated to app v{APP_VERSION} :check_mark_button:' + Style.RESET_ALL))
-        return self.load_data()
+    def load_question(self):
+        if not os.path.exists('question.txt'):
+            return None
+        
+        with open('question.txt', 'r', encoding='utf-8') as file:
+            text = file.read()
+        if text == 'False':
+            return False
+        elif text == 'True':
+            return True
 
     def hash_pass(self, password):
         return hashlib.sha256(password.encode()).hexdigest()
@@ -127,7 +102,7 @@ class Vault_Pass():
     
     def recover_password(self):
         if not os.path.exists(self.lock):
-            print(emoji.emojize(Fore.RED + "There is any file :cross_mark:" + Style.RESET_ALL))
+            print(emoji.emojize(Fore.RED + "There is not any file :cross_mark:" + Style.RESET_ALL))
             return
         
         with open(self.lock, 'r') as file:
@@ -152,22 +127,36 @@ class Vault_Pass():
         if not play:
             print(emoji.emojize(Fore.RED + 'You cannot geuss the answer :cross_mark:' + Style.RESET_ALL))
             sys.exit()
-        
-    def load_data(self):
-        if os.path.exists(self.lock):
-            self.check_master_password()
-        else:
-            self.setup_master_pass()
-            
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as file:
-                return json.load(file)
-        else:
-            return []
-        
-    def save_data(self):
-        with open(self.filename, 'w') as file:
-            return json.dump(self.vault, file, indent=4)
+
+    def change_security_question(self):
+        if not os.path.exists(self.lock):
+            print(emoji.emojize(Fore.RED + 'There is not any file :cross_mark:' + Style.RESET_ALL))
+            return
+
+        with open(self.lock, 'r') as file:
+            data = json.load(file)
+
+        print('What is your current security question (First School)? ')
+
+        game = True
+        for _ in range(3):
+            ans = input('Enter your answer: ')
+            if self.hash_pass(ans) == data['answer']:
+                new = input('Enter a new answer for security question: ')
+                data['answer'] = self.hash_pass(new)
+
+                with open(self.lock, 'w') as file:
+                    json.dump(data, file, indent=4)
+
+                print(emoji.emojize(Fore.GREEN + 'The new answer for security question was changed successfully :check_mark_button:' + Style.RESET_ALL))
+                game = False
+                return
+            else:
+                print(emoji.emojize(Fore.RED + 'Your answer is not correct :cross_mark:' + Style.RESET_ALL))
+
+        if game:
+            print(emoji.emojize(Fore.RED + 'You cannot answer the question :cross_mark:' + Style.RESET_ALL))
+            sys.exit()
         
     def check_pass_strength(self, password):
         score = 0
@@ -252,16 +241,22 @@ class Vault_Pass():
         self.save_data()
         print(emoji.emojize(Fore.GREEN + f"Password '{password}' added :check_mark_button:" + Style.RESET_ALL))
         
-    def search_pass(self, Name):
-        Name = Name.strip()
+    def search_pass(self, search: str):
+        search = search.strip()
+
         found = False
         for pas in self.vault:
-            if Name in pas['Name']: 
+            if search in pas['Name']: 
                 print(f'Name: {pas["Name"]}\nPassword is: {pas["Password"]}')
                 found = True
-                    
+                break
+            if search in pas['Password']:
+                print(f'Name: {pas["Name"]}\nPassword is: {pas["Password"]}')
+                found = True
+                break
+
         if not found:
-            print(emoji.emojize(Fore.RED + f"There is not '{Name}' here :cross_mark:" + Style.RESET_ALL))
+            print(emoji.emojize(Fore.RED + f"There is not '{search}' here :cross_mark:" + Style.RESET_ALL))
 
     def delete_id_by_name(self, id):
         self.vault = [pas for pas in self.vault if pas['id'] != id]
@@ -279,7 +274,7 @@ class Vault_Pass():
             print(emoji.emojize(Fore.GREEN + f"Your password: '{found[0]['Password']}' is removed :check_mark_button:" + Style.RESET_ALL))
         else:
             print(emoji.emojize(Fore.YELLOW + f"There are {len(found)} passwords with the name: '{Name}'" + Style.RESET_ALL))
-            for idx, pas in enumerate(found):
+            for idx, pas in enumerate(found, 1):
                 print(f'{idx}. {pas["Name"]}: {pas["Password"]}')
 
             while True:
@@ -290,13 +285,13 @@ class Vault_Pass():
                     print(Fore.YELLOW + 'Please enter a valid number.' + Style.RESET_ALL)
 
             if 0 <= choice < len(found):
-                self.delete_id_by_name(found[choice]['id'])
+                self.delete_id_by_name(found[choice - 1]['id'])
                 self.save_data()
-                print(emoji.emojize(Fore.GREEN + f"Your password: '{found[choice]['Password']}' is removed successfully :check_mark_button:" + Style.RESET_ALL))
+                print(emoji.emojize(Fore.GREEN + f"Your password: '{found[choice - 1]['Password']}' is removed successfully :check_mark_button:" + Style.RESET_ALL))
             else:
                 print(emoji.emojize(Fore.RED + 'Invalid choice :cross_mark:' + Style.RESET_ALL))
 
-    def edit_pass(self, Name, old_password):
+    def edit_pass(self, Name: str, old_password: str):
         Name = Name.strip()
         old = old_password.strip()
         found = False
@@ -337,7 +332,7 @@ class Vault_Pass():
         else:
             sort = self.vault
 
-        print(emoji.emojize(':locked_with_key: Look at your all password!'))
+        print(emoji.emojize('\n:locked_with_key: Look at your all password!'))
         for idx, pas in enumerate(sort, start=1):
             print(emoji.emojize(f' {idx}. {pas["Name"]}: {pas["Password"]} at {pas["updated_at"]} :locked_with_key:'))
 
@@ -466,12 +461,60 @@ class Vault_Pass():
             })
             self.save_data()
             print(emoji.emojize(Fore.GREEN + 'The generated password was saved successfully :check_mark:' + Style.RESET_ALL))
-            
-    def os_remove_file(self):
-        if not os.path.exists(self.filename) and not os.path.exists(self.lock):
-            print(emoji.emojize(Fore.RED + 'There is not any file on your system :cross_mark:' + Style.RESET_ALL))
+
+    def security_scan(self):
+        if not self.vault:
+            print(emoji.emojize(Fore.RED + 'There is not any passwords to scan :cross_mark:' + Style.RESET_ALL))
             return
+
+        weak_password = []
+        duplicate_password = []
+        password_map = {}
+
+        for pas in self.vault:
+            password = pas['Password']
+
+            level, problems, status = self.check_pass_strength(password)
+
+            if status:
+                weak_password.append(pas)
+
+            if password in password_map:
+                duplicate_password.append((password_map[password], pas))
+            else:
+                password_map[password] = pas['Name']
+
+        total = len(self.vault)
+
+        score = self.calculte_security_score(total, len(weak_password), len(duplicate_password))
+        self.show_scan(total, weak_password, duplicate_password, score)
+
+
+    def calculte_security_score(self, total, weak, duplicate):
+        score = 100
+
+        score -= (weak / total) * 50
+        score -= (duplicate / total) * 50
+
+        return max(0, round(score))
         
+    def show_scan(self, total, weak, duplicate, score):
+        print("\n--- Security Scan Report ---\n")
+        print(f'Total Passwords: {total}')
+        print(f'Weak Paswords: {len(weak)}')
+        print(f'Duplicate Passwords: {len(duplicate)}')
+        print(f'Security Score: {score}/100')
+
+        print(emoji.emojize(Fore.YELLOW + '\nWarning :warning:' + Style.RESET_ALL))
+        if weak:
+            for entry in weak:
+                print(f'- {entry['Name']} is weak')
+        if duplicate:
+            for first, second in duplicate:
+                print(f'- {first} and {second['Name']} use the same password.')
+
+
+    def os_remove_file(self): 
         confirm = input("Are you sure you want to delete your all password and lock file? (y,n): ")
         if confirm.upper() == 'Y':
             if os.path.exists(self.filename):
@@ -482,72 +525,78 @@ class Vault_Pass():
                 os.remove('status.txt')
             if os.path.exists(VERSION_FILE):
                 os.remove(VERSION_FILE)
+            if os.path.exists('question.txt'):
+                os.remove('question.txt')
             print(emoji.emojize(Fore.GREEN + 'The files were removed! :check_mark_button:' + Style.RESET_ALL))
 
-    
     def continue_program(self):
-        Q = input('Do you want to continue Password Manager (y,n)? ')
+        Q = input('Do you want to continue (y,n)? ')
         if Q.upper() == 'Y':
             return True
         else:
-            print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
             return False
 
-            
-def password_manager(vault_class):
-    vault = vault_class()
+vault = Vault_Pass()
+
+def password_manager():
     play = True
-    
     while play:
-        print(emoji.emojize(f'\n--- Password Manager v{APP_VERSION} ---'))
-        print(emoji.emojize('1. Add a password :plus:'))
-        print(emoji.emojize('2. Remove a password :wastebasket:'))
-        print(emoji.emojize('3. Search a password :magnifying_glass_tilted_left:'))
-        print(emoji.emojize('4. Show all passwords :clipboard:'))
-        print(emoji.emojize('5. Edit a password :pencil:'))
-        print(emoji.emojize('6. Check password strength :bar_chart:'))
-        print(emoji.emojize('7. Replace weak passwords :shield:'))
-        print(emoji.emojize('8. Generate a password :game_die:'))
-        print(emoji.emojize('9. Change your master password :locked_with_key:'))
-        print(emoji.emojize('10. Reset all data :bomb:'))
-        print(emoji.emojize('11. Exit :cross_mark:'))
+        print(emoji.emojize(f'\n--- Password Manager ---'))
+        print(emoji.emojize('1. Add a Password :plus:'))
+        print(emoji.emojize('2. Remove a Password :minus:'))
+        print(emoji.emojize('3. Search a Password :magnifying_glass_tilted_left:'))
+        print(emoji.emojize('4. Show All Passwords :clipboard:'))
+        print(emoji.emojize('5. Edit a Password :pencil:'))
+        print(emoji.emojize('6. Back :left_arrow:'))
 
         while True:
             try:
                 choose = int(input('Enter a number from the List: '))
                 break
             except ValueError:
-                print('Just enter a number')
+                print(emoji.emojize(Fore.YELLOW + 'Just enter a number' + Style.RESET_ALL))
         
         if choose == 1:
             Name = input('Enter a name for this password (for example: instagram): ').strip()
             password = input('Enter your password: ').strip()
             if not Name or not password:
                 print(Fore.RED + 'Name and password cannot be empty.' + Style.RESET_ALL)
-                play = vault.continue_program()
             else:
                 vault.add_pass(Name, password)
-                play = vault.continue_program()
+
+            play = vault.continue_program()
+            if play is False:
+                turn()
+                return
 
         elif choose == 2:
             if vault.vault:
                 Name = input('Enter a name to remove it: ')
                 vault.remove_by_name(Name)
                 play = vault.continue_program()
+                if play is False:
+                    turn()
+                    return
             else:
                 print(emoji.emojize(Fore.RED + 'There is not any passwords here :cross_mark:' + Style.RESET_ALL))
 
         elif choose == 3:
             if vault.vault:
-                Name = input('Enter a name of your password to search it: ')
-                vault.search_pass(Name)
+                search = input('Enter a name or password to search: ')
+                vault.search_pass(search)
                 play = vault.continue_program()
+                if play is False:
+                    turn()
+                    return
             else:
                 print(emoji.emojize(Fore.RED + 'There is not any passwords here :cross_mark:' + Style.RESET_ALL))
 
         elif choose == 4:
             vault.show()
             play = vault.continue_program()
+            if play is False:
+                turn()
+                return
 
         elif choose == 5:
             if vault.vault:
@@ -555,69 +604,225 @@ def password_manager(vault_class):
                 old = input('Enter the old password: ')
                 vault.edit_pass(name, old)
                 play = vault.continue_program()
+                if play is False:
+                    turn()
+                    return
             else:
                 print(emoji.emojize(Fore.RED + 'There is not any passwords here :cross_mark:' + Style.RESET_ALL))
 
         elif choose == 6:
+            turn()
+            return
+
+        else:
+            print(emoji.emojize(Fore.RED + 'Invalid number :cross_mark:' + Style.RESET_ALL))
+
+def report():
+    play = True
+    while play:
+        print("\n--- Security Report ---")
+        print(emoji.emojize('1. Run Full Security Scan :printer:'))
+        print(emoji.emojize('2. Check Password Strength :bar_chart:'))
+        print(emoji.emojize('3. Replace Or Remove Weak Passwords :shield:'))
+        print(emoji.emojize('4. Back :left_arrow:'))
+
+        while True:
+            try:
+                choose = int(input('Enter a number from the List: '))
+                break
+            except ValueError:
+                print(emoji.emojize(Fore.YELLOW + 'Just enter a number :warning:' + Style.RESET_ALL))
+
+        if choose == 1:
+            vault.security_scan()
+            play = vault.continue_program()
+            if play is False:
+                turn()
+                return
+
+        elif choose == 2:
             vault.check_pass_level()
             play = vault.continue_program()
+            if play is False:
+                turn()
+                return
 
-        elif choose == 7:
+        elif choose == 3:
             vault.remove_weak_password()
             play = vault.continue_program()
+            if play is False:
+                turn()
+                return
 
-        elif choose == 8:
-            acci = input('Do you want the alphabet for generation password (y,n)? ')
-            if acci.lower() == 'y':
-                letter = True
-            else:
-                letter = False
+        elif choose == 4:
+            turn()
+            return
 
-            number = input('Do you want numbers for generation password (y,n)? ')
-            if number.lower() == 'y':
-                digit = True
-            else:
-                digit = False
+        else:
+            print(emoji.emojize(Fore.RED + 'Invalid number :cross_mark:' + Style.RESET_ALL))
 
-            pun = input('Do you want the punctuation mark for generation password (y,n)? ')
-            if pun.lower() == 'y':
-                punctuation = True
-            else:
-                punctuation = False
+def generation_password():
+    vault = Vault_Pass()
 
-            play = True
-            while play:
-                try: 
-                    length = input('Enter a length of the password (DEFAULT IS 8): ')
-                    if length == '':
-                        vault.generate_password(letter, digit, punctuation)
-                        play = False
-                        break
-                    length = int(length)
-                    break
-                except ValueError:
-                    print(Fore.YELLOW + 'Please enter a valid number.' + Style.RESET_ALL)
+    acci = input('Do you want the alphabet for generation password (y,n)? ')
+    if acci.lower() == 'y':
+        letter = True
+    else:
+        letter = False
 
-            if play:
-                vault.generate_password(letter, digit, punctuation, length)
-            play = vault.continue_program()
+    number = input('Do you want numbers for generation password (y,n)? ')
+    if number.lower() == 'y':
+        digit = True
+    else:
+        digit = False
 
-        elif choose == 9:
+    pun = input('Do you want the punctuation mark for generation password (y,n)? ')
+    if pun.lower() == 'y':
+        punctuation = True
+    else:
+        punctuation = False
+
+    play = True
+    while play:
+        try: 
+            length = input('Enter a length of the password (DEFAULT IS 8): ')
+            if length == '':
+                vault.generate_password(letter, digit, punctuation)
+                play = False
+                break
+            length = int(length)
+            break
+        except ValueError:
+            print(Fore.YELLOW + 'Please enter a valid number.' + Style.RESET_ALL)
+
+    if play:
+        vault.generate_password(letter, digit, punctuation, length)
+
+    Q = input('Do you want to continue Program (y,n)? ')
+    if Q.upper() == 'Y':
+        turn()
+    else:
+        print(emoji.emojize('Goodbye :hand_with_fingers_splayed:'))
+        return False
+
+def setting():
+    play = True
+    while play:
+        print('\n--- Setting ---')
+        print(emoji.emojize('1. Set Your Master Password :key:'))
+        print(emoji.emojize('2. Change Your Master Password :locked_with_key:'))
+        print(emoji.emojize('3. Change Your Security Question :locked:'))
+        print(emoji.emojize('4. Reset All Data :bomb:'))
+        print(emoji.emojize('5. Back :left_arrow:'))
+
+        while True:
+            try:
+                choose = int(input('Enter a number from the list: '))
+                break
+            except ValueError:
+                print(emoji.emojize(Fore.YELLOW + 'Just enter a number :warning:' + Style.RESET_ALL))
+
+
+        if choose == 1:
+            if os.path.exists(vault.lock):
+                print(emoji.emojize(Fore.YELLOW + 'You already have a master password :warning:' + Style.RESET_ALL))
+                continue
+
+            vault.setup_master_pass()
+            vault.question = True
+            with open('question.txt', 'w', encoding='utf-8') as file:
+                file.write('True')
+            turn()
+            return
+
+        elif choose == 2:
+            if not os.path.exists(vault.lock):
+                print(emoji.emojize(Fore.YELLOW + 'You do not have a master password yet :warning:' + Style.RESET_ALL))
+                continue
+
             vault.recover_password()
-            continue
+            turn()
+            return
 
-        elif choose == 10:
+        elif choose == 3:
+            if not os.path.exists(vault.lock):
+                print(emoji.emojize(Fore.YELLOW + 'You do not set any password for lock the file yet! :warning:' + Style.RESET_ALL))
+                continue
+
+            vault.change_security_question()
+            turn()
+            return
+
+        elif choose == 4:
             vault.os_remove_file()
             break
 
-        elif choose == 11:
-            print(emoji.emojize('Goodbye:hand_with_fingers_splayed:'))
-            break
+        elif choose == 5:
+            turn()
+            return
+
         else:
             print(emoji.emojize(Fore.RED + 'Invalid number :cross_mark:' + Style.RESET_ALL))
 
 def turn():
-    password_manager(Vault_Pass)
-        
+
+    if vault.question is None:
+        Q = input('Do you want to lock your file with a master password (y,n)? ')
+        if Q.upper() == 'Y':
+            vault.question = True
+            with open('question.txt', 'w', encoding='utf-8') as file:
+                file.write('True')
+        else:
+            vault.question = False
+            with open('question.txt', 'w', encoding='utf-8') as file:
+                file.write('False')
+
+    if vault.question:
+        if os.path.exists(vault.lock):
+            vault.check_master_password()
+        else:
+            vault.setup_master_pass()
+        vault.question = False
+
+    play = True
+    while play:
+        print(f'\n--- Personal Security Center v{APP_VERSION} ---')
+        print(emoji.emojize('1. Password Manager :key:'))
+        print(emoji.emojize('2. Security Report :bar_chart:'))
+        print(emoji.emojize('3. Password Generation :game_die:'))
+        print(emoji.emojize('4. Setting :gear:'))
+        print(emoji.emojize('5. Exit :door:'))
+
+        while True:
+            try:
+                choose = int(input('Enter a number from the list: '))
+                break
+            except ValueError:
+                print(emoji.emojize(Fore.YELLOW + 'Just enter a number :warning:' + Style.RESET_ALL))
+
+        if choose == 1:
+            password_manager()
+            return
+            
+        elif choose == 2:
+            report()
+            return
+
+        elif choose == 3:
+            generate = generation_password()
+            if generate is False:
+                return
+
+        elif choose == 4:
+            setting()
+            return
+
+        elif choose == 5:
+            print(emoji.emojize('Goodbye :hand_with_fingers_splayed:'))
+            break
+
+        else:
+            print(emoji.emojize(Fore.RED + 'Invalid number :cross_mark:' + Style.RESET_ALL))
+
 if __name__ == '__main__':
     turn()
