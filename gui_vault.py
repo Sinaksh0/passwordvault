@@ -383,33 +383,30 @@ class App:
 
     def setup_window(self):
         self.clear()
-        self.root.geometry("420x370")
+        self.root.geometry("420x270")
         self.root.title("Setup Lock")
 
         tk.Label(self.root, text="Set up your lock", font=("Arial", 18, "bold"), bg=self.colors['bg'], fg=self.colors['fg']).grid(row=0, column=0, columnspan=2, padx=10, pady=(18, 12), sticky="ew")
 
-        question_var = tk.StringVar()
-        password_var = tk.StringVar()
-        confirm_var = tk.StringVar()
 
         tk.Label(self.root, text="Security Question:", font=(None, 10, "bold"), bg=self.colors['bg'], fg=self.colors['fg']).grid(row=1, column=0, padx=12, pady=8, sticky="w")
-        entry = tk.Entry(self.root, textvariable=question_var, bg=self.colors['frame_bg'], fg=self.colors['fg'], insertbackground=self.colors['fg'])
+        entry = tk.Entry(self.root, bg=self.colors['frame_bg'], fg=self.colors['fg'], insertbackground=self.colors['fg'])
         entry.grid(row=1, column=1, padx=12, pady=8, sticky="ew")
 
         tk.Label(self.root, text="Master Password:", font=(None, 10, "bold"), bg=self.colors['bg'], fg=self.colors['fg']).grid(row=2, column=0, padx=12, pady=8, sticky="w")
-        master_entry = tk.Entry(self.root, textvariable=password_var, show="*", bg=self.colors['frame_bg'], fg=self.colors['fg'], insertbackground=self.colors['fg'])
+        master_entry = tk.Entry(self.root, show="*", bg=self.colors['frame_bg'], fg=self.colors['fg'], insertbackground=self.colors['fg'])
         master_entry.grid(row=2, column=1, padx=12, pady=8, sticky="ew")
 
         tk.Label(self.root, text="Confirm Password:", font=(None, 10, "bold"), bg=self.colors['bg'], fg=self.colors['fg']).grid(row=3, column=0, padx=12, pady=8, sticky="w")
-        confirm_entry = tk.Entry(self.root, textvariable=confirm_var, show="*", bg=self.colors['frame_bg'], fg=self.colors['fg'], insertbackground=self.colors['fg'])
+        confirm_entry = tk.Entry(self.root, show="*", bg=self.colors['frame_bg'], fg=self.colors['fg'], insertbackground=self.colors['fg'])
         confirm_entry.grid(row=3, column=1, padx=12, pady=8, sticky="ew")
 
         entry.focus_set()
 
         def save():
-            question = question_var.get().strip()
-            password = password_var.get()
-            confirm = confirm_var.get()
+            question = entry.get().strip()
+            password = master_entry.get().strip()
+            confirm = confirm_entry.get().strip()
 
             if not question:
                 messagebox.showerror("Error", "Security question is required.", parent=self.root)
@@ -423,6 +420,7 @@ class App:
                 messagebox.showerror("Error", "Passwords do not match.", parent=self.root)
                 master_entry.delete(0, tk.END)
                 confirm_entry.delete(0, tk.END)
+                master_entry.focus_set()
                 return
 
             data = {
@@ -749,17 +747,17 @@ class App:
 
     def generation_password(self):
         self.clear()
-        self.root.geometry("310x210")
+        self.root.geometry("310x170")
 
         tk.Label(self.root, text="Generation Password", font=("Arial", 20, 'bold'), bg=self.colors['bg'], fg=self.colors['fg']).grid(row=0, column=0, columnspan=2, padx=10, pady=15, sticky="nsew")
 
-        tk.Label(self.root, text="Length (DEFAULT IS 8):", font=(None, 10), bg=self.colors['bg'], fg=self.colors['fg']).grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        label = tk.Label(self.root, text="Length (DEFAULT IS 8):", font=(None, 10), bg=self.colors['bg'], fg=self.colors['fg'])
+        label.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         length_entry = tk.Entry(self.root, bg=self.colors['frame_bg'], fg=self.colors['fg'], insertbackground=self.colors['fg'])
         length_entry.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
         length_entry.focus_set()
 
         result_label = tk.Label(self.root, text="", font=(None, 10), bg=self.colors['bg'], fg=self.colors['fg'])
-        result_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         def generate():
             global result
             try:
@@ -771,7 +769,10 @@ class App:
                     result = self.vault.generate_password(self.root, letter, digit, punctuation, length)
                 length_entry.delete(0, tk.END)
                 result_label.configure(text=result)
+                label.destroy()
+                length_entry.destroy()
                 gen_btn.destroy()
+                result_label.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
                 save_btn.grid(row=0, column=0, padx=5, pady=5)
                 copy_btn.grid(row=0, column=1, padx=5, pady=5)
                 back_btn.grid(row=0, column=2, padx=5, pady=5)
@@ -804,7 +805,7 @@ class App:
                 messagebox.showerror('Error Copy', e, parent=self.root)
 
         frame_button = tk.Frame(self.root, bg=self.colors['frame_bg'])
-        frame_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
+        frame_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
         
         gen_btn = tk.Button(frame_button, text="Generate", command=generate, width=10, bg=self.colors['button_bg'], fg=self.colors['button_fg'], activebackground=self.colors['activebg'], 
                         activeforeground=self.colors['activefg'], relief="flat", cursor='hand2')
@@ -890,6 +891,7 @@ class App:
 
             name_entry.delete(0, tk.END)
             pass_entry.delete(0, tk.END)
+            name_entry.focus_set()
             self.vault.add_pass(name, password, self.root)
 
         frame_button = tk.Frame(self.root, bg=self.colors['frame_bg'])
