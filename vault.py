@@ -11,7 +11,7 @@ import pyperclip
 from datetime import datetime
 from colorama import Fore, Style
 
-APP_VERSION = '1.0.5'
+APP_VERSION = '1.1.0'
 VERSION_FILE = 'version.txt'
 
 class Vault_Pass():
@@ -250,15 +250,13 @@ class Vault_Pass():
         search = search.strip()
 
         found = False
-        for pas in self.vault:
+        for index, pas in enumerate(self.vault, 1):
             if search in pas['Name']: 
-                print(f'Name: {pas["Name"]}\nPassword is: {pas["Password"]}')
+                print(f'\n{index}.\nName: {pas["Name"]}\nPassword: {pas["Password"]}')
                 found = True
-                break
             if search in pas['Password']:
-                print(f'Name: {pas["Name"]}\nPassword is: {pas["Password"]}')
+                print(f'\n{index}.\nName: {pas["Name"]}\nPassword: {pas["Password"]}')
                 found = True
-                break
 
         if not found:
             print(emoji.emojize(Fore.RED + f"There is not '{search}' here :cross_mark:" + Style.RESET_ALL))
@@ -289,7 +287,7 @@ class Vault_Pass():
                 except ValueError:
                     print(Fore.YELLOW + 'Please enter a valid number.' + Style.RESET_ALL)
 
-            if 0 <= choice < len(found):
+            if 0 < choice <= len(found):
                 self.delete_id_by_name(found[choice - 1]['id'])
                 self.save_data()
                 print(emoji.emojize(Fore.GREEN + f"Your password: '{found[choice - 1]['Password']}' is removed successfully :check_mark_button:" + Style.RESET_ALL))
@@ -466,6 +464,14 @@ class Vault_Pass():
             })
             self.save_data()
             print(emoji.emojize(Fore.GREEN + 'The generated password was saved successfully :check_mark:' + Style.RESET_ALL))
+
+        copy = input('Do you want to copy it to clipboard (y,n)? ')
+        if copy.upper() == 'Y':
+            try:
+                pyperclip.copy(result)
+                print(emoji.emojize(Fore.GREEN + 'The generated password was copied to the clipboard :clipboard:' + Style.RESET_ALL))
+            except pyperclip.PyperclipException:
+                print(Fore.RED + 'Failed to copy to clipboard. Please ensure you have a clipboard available.' + Style.RESET_ALL)
 
     def security_scan(self):
         if not self.vault:
